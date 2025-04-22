@@ -72,7 +72,11 @@ vec3 col = palette(t);
 /* very deep interior fades to near‑black but not pure black */
 col *= mix(0.07, 1.0, pow(t, 0.6));   // keeps faint texture in the “black”
     
-  
+    /* — colour mapping — */
+    float f  = smoothstep(0.0, 1.0, m * 0.025);   // steeper curve for contrast
+    vec3  col= palette(f);                        // always colour — no hard black
+    if(m<2.0) col *= 0.10;                        // just dim the deepest interior
+
     /* ── optional golden‑flower orbit‑trap (rose‑petal ring) ─────────── */
 /* Removed for now
     float a = atan(uv.y, uv.x) * 3.0;          // 3× frequency: 6 petals
@@ -172,7 +176,7 @@ function loop(){
   gl.uniform1f(u_zoom, zoom);
   gl.uniform2f(u_center, center.x, center.y);
 
-    const maxIter = Math.min(2000, 120 + Math.floor(4.0*Math.log10(1/zoom))*120); /* const maxIter = Math.min(1500, 120 + Math.floor(3.6 * Math.log10(1/zoom)) * 90);*/
+    const maxIter = Math.min(1200, 80 + Math.floor(3.3*Math.log10(1/zoom))*80); /* const maxIter = Math.min(1500, 120 + Math.floor(3.6 * Math.log10(1/zoom)) * 90);*/
 gl.uniform1f(u_iter, maxIter); 
 
   gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
