@@ -12,6 +12,7 @@ uniform vec2  u_res;
 uniform vec2  u_center;
 uniform float u_zoom;
 uniform float u_time;
+    uniform float u_iter;
 
 vec3 palette(float t){
     /* simple cosine palette: lavender‑blue‑cyan */
@@ -40,6 +41,15 @@ void main(){
     vec3  col= palette(f);                        // always colour — no hard black
     if(m<2.0) col *= 0.10;                        // just dim the deepest interior
 
+    /* ── optional golden‑flower orbit‑trap (rose‑petal ring) ─────────── */
+float a = atan(uv.y, uv.x) * 3.0;          // 3× frequency: 6 petals
+float r = length(uv);
+float rose = abs(r - 0.30 - 0.08 * cos(6.0 * a));
+vec3  petal = mix(col, vec3(1.0, 0.8, 0.25), exp(-rose * 60.0));
+float inside = step(u_iter - 0.5, m);      // 1.0 if we never escaped
+col = mix(col, petal, inside);
+/* ────────────────────────────────────────────────────────────────── */
+
     gl_FragColor = vec4(col,1.0);
 }
 </script>
@@ -66,6 +76,7 @@ const u_res    = gl.getUniformLocation(prog,'u_res'),
       u_time   = gl.getUniformLocation(prog,'u_time'),
       u_zoom   = gl.getUniformLocation(prog,'u_zoom'),
       u_center = gl.getUniformLocation(prog,'u_center');
+    const u_iter = gl.getUniformLocation(prog,'u_iter');
 
 /* ----------  Resize  ---------- */
 function resize(){
@@ -122,6 +133,9 @@ function loop(){
   gl.uniform1f(u_time, t);
   gl.uniform1f(u_zoom, zoom);
   gl.uniform2f(u_center, center.x, center.y);
+
+    const maxIter = Math.min(1200, 80 + Math.floor(3.3*Math.log10(1/zoom))*80); /* const maxIter = Math.min(1500, 120 + Math.floor(3.6 * Math.log10(1/zoom)) * 90);*/
+gl.uniform1f(u_iter, maxIter); 
 
   gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
   requestAnimationFrame(loop);
