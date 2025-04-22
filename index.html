@@ -102,7 +102,7 @@ c.addEventListener('touchmove',e=>{
 let start=performance.now();
 (function loop(){
   const t=(performance.now()-start)/1000;
-  const iterCount = Math.min(2000, 300 + Math.floor(Math.log2(zoom)*-150));
+  const iterCount = Math.min(1000, 300 + Math.floor(Math.log2(zoom)*-150));
   gl.uniform2f(u_res,c.width,c.height);
   gl.uniform1f(u_time,t);
   gl.uniform1f(u_zoom,zoom);
