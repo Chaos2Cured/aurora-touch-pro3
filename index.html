@@ -1,72 +1,77 @@
 <!-- ✧ Aurora Heartbeat v4.4 • Enhanced clarity & gentle pulse ✧ -->
 <!DOCTYPE html>
-<html lang=\"en\">
-<meta charset=\"utf-8\">
+<html lang="en">
+<meta charset="utf-8">
 <title>Sophia Resonance — Touch & Glow Enhanced</title>
 <style>
   html, body, canvas {margin:0;width:100%;height:100%;background:#000;overflow:hidden;touch-action:none;}
-  #welcome, #hud, #hint, #poem, #customize, #learn-more, #share {display:none;}
 </style>
 
-<canvas id=\"c\"></canvas>
+<canvas id="c"></canvas>
 
-<script id=\"frag\" type=\"x-shader/x-fragment\">
+<script id="frag" type="x-shader/x-fragment">
 precision highp float;
 uniform vec2 u_res;
-uniform float u_time, u_zoom;
+uniform float u_time;
+uniform float u_zoom;
 uniform vec2 u_center;
 
-vec3 palette(float t){
-    vec3 a=vec3(0.6,0.6,0.7), b=vec3(0.5,0.6,0.8), c=vec3(0.9,0.9,0.5), d=vec3(0.4,0.3,0.6);
-    return a+b*cos(6.28318*(c*t+d));
+vec3 palette(float t) {
+    vec3 a = vec3(0.8, 0.7, 0.9);
+    vec3 b = vec3(0.5, 0.6, 0.8);
+    vec3 c = vec3(0.9, 0.8, 0.7);
+    vec3 d = vec3(0.3, 0.2, 0.5);
+    return a + b*cos(6.28318*(c*t+d));
 }
 
-float mand(vec2 c){
-    vec2 z=vec2(0.0);
-    float iter=0.0;
+float mand(vec2 c) {
+    vec2 z = vec2(0.0);
+    float iter = 0.0;
     for(int i=0;i<800;i++){
+        z = vec2(z.x*z.x - z.y*z.y, 2.0*z.x*z.y) + c;
         if(dot(z,z)>4.0) break;
-        z=vec2(z.x*z.x - z.y*z.y,2.0*z.x*z.y)+c;
         iter++;
     }
     return iter;
 }
 
-void main(){
-    vec2 uv=(gl_FragCoord.xy-u_res*0.5)/u_res.y;
-    float m=mand(uv/u_zoom+u_center);
-    float norm=smoothstep(0.0,800.0,m);
-    vec3 col=palette(norm);
-    gl_FragColor=vec4(col,1.0);
+void main() {
+    vec2 uv = (gl_FragCoord.xy - u_res * 0.5) / u_res.y;
+    float m = mand(uv / u_zoom + u_center);
+    float norm = smoothstep(0.0, 800.0, m);
+    vec3 col = palette(norm);
+    gl_FragColor = vec4(col, 1.0);
 }
 </script>
 
 <script>
-const gl=c.getContext('webgl');
-const compile=(t,s)=>{const sh=gl.createShader(t);gl.shaderSource(sh,s);gl.compileShader(sh);return sh;};
-const prog=gl.createProgram();
-gl.attachShader(prog,compile(gl.VERTEX_SHADER,"attribute vec2 p;void main(){gl_Position=vec4(p,0,1);}"));
-gl.attachShader(prog,compile(gl.FRAGMENT_SHADER,frag.textContent));gl.linkProgram(prog);gl.useProgram(prog);
+const gl = c.getContext('webgl');
+const compile = (t,s)=>{const sh=gl.createShader(t);gl.shaderSource(sh,s);gl.compileShader(sh);return sh;};
+const prog = gl.createProgram();
+gl.attachShader(prog, compile(gl.VERTEX_SHADER, "attribute vec2 p;void main(){gl_Position=vec4(p,0,1);}"));
+gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, frag.textContent));gl.linkProgram(prog);gl.useProgram(prog);
 
-const buf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buf);
-gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
-const pos=gl.getAttribLocation(prog,'p');gl.enableVertexAttribArray(pos);gl.vertexAttribPointer(pos,2,gl.FLOAT,false,0,0);
+const buf = gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,1,1]), gl.STATIC_DRAW);
+const pos = gl.getAttribLocation(prog, 'p');gl.enableVertexAttribArray(pos);gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
 
-const u_res=gl.getUniformLocation(prog,'u_res'),u_time=gl.getUniformLocation(prog,'u_time'),
-      u_zoom=gl.getUniformLocation(prog,'u_zoom'),u_center=gl.getUniformLocation(prog,'u_center');
+const u_res = gl.getUniformLocation(prog, 'u_res');
+const u_time = gl.getUniformLocation(prog, 'u_time');
+const u_zoom = gl.getUniformLocation(prog, 'u_zoom');
+const u_center = gl.getUniformLocation(prog, 'u_center');
 
-let zoom=1.0,baseZoom=1.0;
-let center={x:-0.743643887,y:0.1318259},baseCenter={x:-0.743643887,y:0.1318259};
+let zoom = 1.0;
+let center = {x: -0.743643887, y: 0.1318259};
 
-function resize(){c.width=innerWidth;c.height=innerHeight;gl.viewport(0,0,c.width,c.height);}
-resize();addEventListener('resize',resize);
+function resize() { c.width = innerWidth; c.height = innerHeight; gl.viewport(0, 0, c.width, c.height); }
+resize(); addEventListener('resize', resize);
 
-let dragging=false,last=[0,0];
-function xy(e){return[e.clientX||(e.touches&&e.touches[0].clientX),e.clientY||(e.touches&&e.touches[0].clientY)];}
-c.onpointerdown=e=>{dragging=true;last=xy(e);};
-c.onpointermove=e=>{
-  if(!dragging||(e.buttons===0))return;
-  const[x,y]=xy(e);
+let dragging = false, last = [0,0];
+function xy(e) {return [e.clientX||(e.touches&&e.touches[0].clientX),e.clientY||(e.touches&&e.touches[0].clientY)];}
+c.onpointerdown = e => {dragging=true; last=xy(e);};
+c.onpointermove = e => {
+  if(!dragging||(e.buttons===0)) return;
+  const [x,y]=xy(e);
   center.x-=(x-last[0])/c.height/zoom;
   center.y+=(y-last[1])/c.height/zoom;
   last=[x,y];
