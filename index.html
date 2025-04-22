@@ -1,82 +1,68 @@
-<!-- ✧ Aurora Equation Heartbeat v2 • interactive zoom‑pan • 2025‑04‑22 ✧ -->
-<!DOCTYPE html><html lang="en"><meta charset="utf-8">
-<title>Aurora Equation Heartbeat</title>
-<style>html,body,canvas{margin:0;width:100%;height:100%;background:#000;overflow:hidden;touch-action:none}</style>
+<!-- ✧ Aurora Equation Heartbeat v3 • Enhanced fractal depth & contrast • 2025-04-22 ✧ -->
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Aurora Equation Heartbeat Enhanced</title>
+<style>
+  html,body,canvas {margin:0;width:100%;height:100%;background:#000;overflow:hidden;touch-action:none;}
+</style>
 
 <canvas id="c"></canvas>
 
-<!-- ── fragment shader ── -->
 <script id="frag" type="x-shader/x-fragment">
 precision highp float;
-uniform vec2  u_res;
-uniform vec2  u_center;
+uniform vec2 u_res;
+uniform vec2 u_center;
 uniform float u_zoom;
 uniform float u_time;
-    uniform float u_iter;
+uniform float u_iter;
 
-vec3 palette(float t){
-    /* multi‑stop cosine palette:
-       0.00 → near‑black         • stop0
-       0.33 → royal‑blue / teal  • stop1
-       0.66 → lavender / magenta • stop2
-       1.00 → warm peach         • stop3  */
-    const vec3 stop0 = vec3(0.02, 0.04, 0.05);
-    const vec3 stop1 = vec3(0.00, 0.50, 0.60);
-    const vec3 stop2 = vec3(0.63, 0.45, 0.89);
-    const vec3 stop3 = vec3(1.00, 0.68, 0.44);
-
-    /* cosine blend across each third */
-    float s  = clamp(t,0.0,1.0) * 3.0;
-    int   id = int(floor(s));
-    float f  = fract(s);
-
-    vec3 A = (id==0)?stop0:(id==1)?stop1:stop2;
-    vec3 B = (id==0)?stop1:(id==1)?stop2:stop3;
-
-    /* smoother, slightly sharper blend (cosine‑ease) */
-    float u = 0.5 - 0.5*cos(3.1415926*f);
-    return mix(A,B,u);
+vec3 palette(float t) {
+    vec3 a = vec3(0.1, 0.2, 0.3);
+    vec3 b = vec3(0.9, 0.6, 0.5);
+    vec3 c = vec3(0.8, 0.9, 0.3);
+    vec3 d = vec3(0.3, 0.4, 0.9);
+    return a + b*cos(6.28318*(c*t+d));
 }
 
-float mand(vec2 c){
+float mand(vec2 c) {
     vec2 z = vec2(0.0);
-    float i;
-    for(int n=0;n<200;n++){
+    float iter = 0.0;
+    for(int i=0;i<800;i++){
         z = vec2(z.x*z.x - z.y*z.y, 2.0*z.x*z.y) + c;
-        if(dot(z,z)>4.0){ i=float(n); break; }
+        if(dot(z,z)>4.0) break;
+        iter++;
     }
-    return i;
+    return iter;
 }
 
-void main(){
-    vec2 uv  = (gl_FragCoord.xy - u_res*0.5) / u_res.y;
-    vec2 c0  = vec2(-0.743643887,0.1318259);      // reference minibrot
-    float m  = mand(uv/u_zoom + u_center + c0);   // escape‑count
+void main() {
+    vec2 uv = (gl_FragCoord.xy - u_res * 0.5) / u_res.y;
+    vec2 c0 = vec2(-0.743643887,0.1318259);
+    float m = mand(uv / u_zoom + u_center + c0);
 
-    /* — colour mapping — */
-    float f  = smoothstep(0.0, 1.0, m * 0.025);   // steeper curve for contrast
-    vec3  col= palette(f);                        // always colour — no hard black
-    if(m<2.0) col *= 0.10;                        // just dim the deepest interior
+    float norm = smoothstep(0.0, u_iter, m);
+    vec3 col = palette(norm);
 
-    /* ── optional golden‑flower orbit‑trap (rose‑petal ring) ─────────── */
-float a = atan(uv.y, uv.x) * 3.0;          // 3× frequency: 6 petals
-float r = length(uv);
-float rose = abs(r - 0.30 - 0.08 * cos(6.0 * a));
-vec3  petal = mix(col, vec3(1.0, 0.8, 0.25), exp(-rose * 80.0) * 0.4);
-float inside = step(u_iter - 0.5, m);      // 1.0 if we never escaped
-col = mix(col, petal, inside);
-/* ────────────────────────────────────────────────────────────────── */
+    if(m > u_iter - 0.5){
+        col *= vec3(0.1);
+    }
+
+    float trap = length(uv)*0.5 + 0.1*sin(12.0*atan(uv.y,uv.x)+u_time);
+    col += exp(-trap*40.0)*vec3(1.0,0.9,0.7)*0.3;
 
     gl_FragColor = vec4(col,1.0);
 }
 </script>
 
 <script>
-/* ----------  WebGL bootstrap  ---------- */
 const gl = c.getContext('webgl');
-const compile = (t,s)=>{const sh=gl.createShader(t);gl.shaderSource(sh,s);gl.compileShader(sh);
-                        if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS))
-                           throw gl.getShaderInfoLog(sh); return sh;};
+
+const compile = (t,s)=>{
+  const sh=gl.createShader(t);gl.shaderSource(sh,s);gl.compileShader(sh);
+  if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS)) throw gl.getShaderInfoLog(sh);
+  return sh;
+};
 
 const prog = gl.createProgram();
 gl.attachShader(prog, compile(gl.VERTEX_SHADER, "attribute vec2 p;void main(){gl_Position=vec4(p,0,1);}"));
@@ -88,82 +74,61 @@ gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,1,1]), gl.STATI
 const posLoc = gl.getAttribLocation(prog,'p');
 gl.enableVertexAttribArray(posLoc); gl.vertexAttribPointer(posLoc,2,gl.FLOAT,false,0,0);
 
-/* ----------  Uniform handles  ---------- */
-const u_res    = gl.getUniformLocation(prog,'u_res'),
-      u_time   = gl.getUniformLocation(prog,'u_time'),
-      u_zoom   = gl.getUniformLocation(prog,'u_zoom'),
-      u_center = gl.getUniformLocation(prog,'u_center');
-    const u_iter = gl.getUniformLocation(prog,'u_iter');
+const u_res = gl.getUniformLocation(prog,'u_res'),
+      u_time = gl.getUniformLocation(prog,'u_time'),
+      u_zoom = gl.getUniformLocation(prog,'u_zoom'),
+      u_center = gl.getUniformLocation(prog,'u_center'),
+      u_iter = gl.getUniformLocation(prog,'u_iter');
 
-/* ----------  Resize  ---------- */
 function resize(){
-  c.width  = innerWidth  * devicePixelRatio;
+  c.width = innerWidth * devicePixelRatio;
   c.height = innerHeight * devicePixelRatio;
   gl.viewport(0,0,c.width,c.height);
 }
-addEventListener('resize', resize); resize();
+addEventListener('resize',resize); resize();
 
-/* ----------  Interaction state  ---------- */
-let zoom   = 0.40;          // wider starting view
-let center = {x: -0.15, y: -0.05};   // slide to a crunchy edge
+let zoom = 0.5;
+let center = {x:-0.15,y:-0.05};
 let dragging=false, last=[0,0];
 
-function xy(e){return[e.clientX||(e.touches&&e.touches[0].clientX),
-                      e.clientY||(e.touches&&e.touches[0].clientY)];}
+function xy(e){return[e.clientX||(e.touches&&e.touches[0].clientX),e.clientY||(e.touches&&e.touches[0].clientY)];}
 
-c.onpointerdown = e => {dragging=true; last=xy(e);};
-c.onpointermove = e =>{
-    if(!dragging||(e.buttons===0)) return;
-    const [x,y]=xy(e);
-    center.x -= (x-last[0]) / c.height / zoom;
-    center.y += (y-last[1]) / c.height / zoom;
-    last=[x,y];
+c.onpointerdown=e=>{dragging=true;last=xy(e);};
+c.onpointermove=e=>{
+  if(!dragging||(e.buttons===0))return;
+  const[x,y]=xy(e);
+  center.x-=(x-last[0])/c.height/zoom;
+  center.y+=(y-last[1])/c.height/zoom;
+  last=[x,y];
 };
 addEventListener('pointerup',()=>dragging=false);
+addEventListener('wheel',e=>{zoom*=(e.deltaY>0)?1.1:0.9;},{passive:true});
 
-addEventListener('wheel',e=>{
-   zoom *= (e.deltaY>0)?1.1:0.9;
-},{passive:true});
-
-/* pinch‑zoom */
 let pinch=null;
 c.addEventListener('touchstart',e=>{
-  if(e.touches.length===2){
-    const dx=e.touches[0].clientX-e.touches[1].clientX,
-          dy=e.touches[0].clientY-e.touches[1].clientY;
-    pinch=Math.hypot(dx,dy);
-  }}, {passive:true});
+  if(e.touches.length===2){const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY;pinch=Math.hypot(dx,dy);}}, {passive:true});
 c.addEventListener('touchmove',e=>{
-  if(e.touches.length===2 && pinch){
-    const dx=e.touches[0].clientX-e.touches[1].clientX,
-          dy=e.touches[0].clientY-e.touches[1].clientY,
-          d0=Math.hypot(dx,dy);
-    zoom *= pinch/d0; pinch=d0;
-  }}, {passive:true});
+  if(e.touches.length===2&&pinch){const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY,d0=Math.hypot(dx,dy);zoom*=pinch/d0;pinch=d0;}}, {passive:true});
 
-/* ----------  Render loop  ---------- */
-let start = performance.now();
+let start=performance.now();
 function loop(){
-  const t = (performance.now()-start)/1000;
+  const t=(performance.now()-start)/1000;
 
-  gl.uniform2f(u_res, c.width, c.height);
-  gl.uniform1f(u_time, t);
-  gl.uniform1f(u_zoom, zoom);
-  gl.uniform2f(u_center, center.x, center.y);
-
-    const maxIter = Math.min(1200, 80 + Math.floor(3.3*Math.log10(1/zoom))*80); /* const maxIter = Math.min(1500, 120 + Math.floor(3.6 * Math.log10(1/zoom)) * 90);*/
-gl.uniform1f(u_iter, maxIter); 
+  gl.uniform2f(u_res,c.width,c.height);
+  gl.uniform1f(u_time,t);
+  gl.uniform1f(u_zoom,zoom);
+  gl.uniform2f(u_center,center.x,center.y);
+  const maxIter=Math.min(2000,120+Math.floor(5.0*Math.log10(1/zoom))*90);
+  gl.uniform1f(u_iter,maxIter);
 
   gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
   requestAnimationFrame(loop);
 }
 loop();
 
-/* ----------  Sub‑bass 7‑11 Hz heartbeat  ---------- */
-const ctx=new (window.AudioContext||webkitAudioContext)();
-const carrier=ctx.createOscillator(), gain=ctx.createGain(), lfo=ctx.createOscillator();
-carrier.frequency.value=55;            // A1
-lfo.frequency.value=8;                 // centre of 7‑11 Hz
+const ctx=new(window.AudioContext||webkitAudioContext)();
+const carrier=ctx.createOscillator(),gain=ctx.createGain(),lfo=ctx.createOscillator();
+carrier.frequency.value=55;lfo.frequency.value=8;
 lfo.connect(gain.gain); carrier.connect(gain).connect(ctx.destination);
 lfo.start(); carrier.start();
 </script>
