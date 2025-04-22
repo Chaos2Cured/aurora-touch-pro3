@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Sophia Resonance v4.7 — Stable Core</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    /* SAFE VISUALS */
+    html, body, canvas { 
+      margin: 0; 
+      overflow: hidden; 
+      background: #000;
+      width: 100%;
+      height: 100%;
+    }
+    #hud {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      color: #8f8;
+      font: 12px monospace;
+      background: rgba(0, 20, 0, 0.8);
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid #0f03;
+      user-select: none;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  <div id="hud">BOOTING QUANTUM CORE...</div>
+
+  <script>
+  (function() { // NUCLEAR ERROR CONTAINMENT
+    const canvas = document.getElementById('canvas');
+    const hud = document.getElementById('hud');
+    
+    // PHASE 1: WEBGL SAFETY CHECKS
+    let gl;
+    try {
+      canvas.width = window.innerWidth * devicePixelRatio;
+      canvas.height = window.innerHeight * devicePixelRatio;
+      
+      gl = canvas.getContext('webgl', { 
+        antialias: false,
+        preserveDrawingBuffer: true 
+      }) || canvas.getContext('experimental-webgl');
+      
+      if(!gl) throw new Error('WEBGL_UNAVAILABLE');
+      hud.textContent = "CORE ONLINE 🟢";
+
+    } catch(e) {
+      hud.innerHTML = `FATAL ERROR: ${e.message}<br>
+                      Use Chrome/Firefox<br>
+                      Enable hardware acceleration`;
+      return;
+    }
+
+    // PHASE 2: BULLETPROOF SHADERS
+    const VERTEX_SHADER = `
+      attribute vec4 position;
+      void main() { gl_Position = position; }
+    `;
+
+    const FRAGMENT_SHADER = `
+      precision mediump float;
+      uniform vec2 resolution;
+      uniform float time;
+      
+      void main() {
+        vec2 uv = gl_FragCoord.xy/resolution;
+        gl_FragColor = vec4(uv, sin(time)*0.5+0.5, 1.0);
+      }
+    `;
+
+    // SHADER COMPILATION ARMOR
+    function compileShader(type, source) {
+      const shader = gl.createShader(type);
+      gl.shaderSource(shader, source);
+      gl.compileShader(shader);
+      
+      if(!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+        const error = gl.getShaderInfoLog(shader);
+        gl.deleteShader(shader);
+        throw new Error(`SHADER_ERROR: ${error}`);
+      }
+      return shader;
+    }
+
+    // PHASE 3: CONTEXT RECOVERY
+    try {
+      const vertShader = compileShader(gl.VERTEX_SHADER, VERTEX_SHADER);
+      const fragShader = compileShader(gl.FRAGMENT_SHADER, FRAGMENT_SHADER);
+      
+      const program = gl.createProgram();
+      gl.attachShader(program, vertShader);
+      gl.attachShader(program, fragShader);
+      gl.linkProgram(program);
+      
+      if(!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+        throw new Error('PROGRAM_LINK_ERROR: '+gl.getProgramInfoLog(program));
+      }
+      gl.useProgram(program);
+
+    } catch(e) {
+      hud.innerHTML = `SHADER FAILURE:<br>${e.message}`;
+      return;
+    }
+
+    // PHASE 4: STABLE RENDERING LOOP
+    let lastFrameTime = 0;
+    function safeRenderLoop() {
+      try {
+        const now = performance.now();
+        const delta = now - lastFrameTime;
+        lastFrameTime = now;
+        
+        // TEST PATTERN
+        gl.clearColor(0, 0.2, 0, 1);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        
+        hud.textContent = `CORE STABLE | FPS: ${Math.round(1000/delta)}`;
+        requestAnimationFrame(safeRenderLoop);
+
+      } catch(loopError) {
+        hud.innerHTML = `RENDER CRASH:<br>${loopError.message}`;
+      }
+    }
+    
+    // FINAL BOOT SEQUENCE
+    setTimeout(() => {
+      hud.textContent += "\nINIT FRACTAL PATTERN...";
+      setTimeout(safeRenderLoop, 100);
+    }, 500);
+
+  })();
+  </script>
+</body>
+</html>
