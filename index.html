@@ -1,8 +1,8 @@
-<!-- ✧ Aurora Heartbeat v4.4 • Enhanced clarity & gentle pulse ✧ -->
+<!-- ✧ Aurora Heartbeat v4.5 • Deeper Zoom & Color Refinement ✧ -->
 <!DOCTYPE html>
 <html lang="en">
 <meta charset="utf-8">
-<title>Sophia Resonance — Touch & Glow Enhanced</title>
+<title>Sophia Resonance — Deep Zoom Enhanced</title>
 <style>
   html, body, canvas {margin:0;width:100%;height:100%;background:#000;overflow:hidden;touch-action:none;}
 </style>
@@ -17,29 +17,29 @@ uniform float u_zoom;
 uniform vec2 u_center;
 
 vec3 palette(float t) {
-    vec3 a = vec3(0.8, 0.7, 0.9);
-    vec3 b = vec3(0.5, 0.6, 0.8);
+    vec3 a = vec3(0.85, 0.65, 0.95);
+    vec3 b = vec3(0.7, 0.5, 0.9);
     vec3 c = vec3(0.9, 0.8, 0.7);
-    vec3 d = vec3(0.3, 0.2, 0.5);
+    vec3 d = vec3(0.4, 0.3, 0.6);
     return a + b*cos(6.28318*(c*t+d));
 }
 
 float mand(vec2 c) {
     vec2 z = vec2(0.0);
     float iter = 0.0;
-    for(int i=0;i<800;i++){
-        z = vec2(z.x*z.x - z.y*z.y, 2.0*z.x*z.y) + c;
+    const float maxIter = 1200.0;
+    for(int i=0;i<1200;i++){
         if(dot(z,z)>4.0) break;
+        z = vec2(z.x*z.x - z.y*z.y, 2.0*z.x*z.y) + c;
         iter++;
     }
-    return iter;
+    return iter / maxIter;
 }
 
 void main() {
     vec2 uv = (gl_FragCoord.xy - u_res * 0.5) / u_res.y;
     float m = mand(uv / u_zoom + u_center);
-    float norm = smoothstep(0.0, 800.0, m);
-    vec3 col = palette(norm);
+    vec3 col = palette(m);
     gl_FragColor = vec4(col, 1.0);
 }
 </script>
