@@ -17,8 +17,8 @@ uniform float u_zoom;
 uniform vec2 u_center;
 
 vec3 palette(float t) {
-    vec3 a = vec3(0.5, 0.2, 0.6); // darker base purple tone
-    vec3 b = vec3(0.6, 0.5, 0.7); // less green amplitude, higher contrast /* changed b.y to .04 */
+    vec3 a = vec3(0.5, 0.3, 0.6); // darker base purple tone
+    vec3 b = vec3(0.6, 0.6, 0.7); // less green amplitude, higher contrast /* changed b.y to .04 */
     vec3 c = vec3(0.9, 0.7, 0.8); // smooth frequency transitions
     vec3 d = vec3(0.4, 0.5, 0.3); // adjusted phases for balance
     return a + b * cos(6.28318 * (c * t + d));
