@@ -1,8 +1,8 @@
-<!-- ✧ Aurora Heartbeat v4.6 • Deeper Zoom & Dynamic Clarity • Complete Example ✧ -->
+<!-- ✧ Aurora Heartbeat v4.5 • Deeper Zoom & Color Refinement ✧ -->
 <!DOCTYPE html>
 <html lang="en">
 <meta charset="utf-8">
-<title>Sophia Resonance — Dynamic Deep Zoom</title>
+<title>Sophia Resonance — Deep Zoom Enhanced</title>
 <style>
   html, body, canvas {margin:0;width:100%;height:100%;background:#000;overflow:hidden;touch-action:none;}
 </style>
@@ -12,26 +12,28 @@
 <script id="frag" type="x-shader/x-fragment">
 precision highp float;
 uniform vec2 u_res;
-uniform float u_time, u_zoom, u_iter;
+uniform float u_time;
+uniform float u_zoom;
 uniform vec2 u_center;
 
 vec3 palette(float t) {
-    vec3 a = vec3(0.5, 0.3, 0.6);
-    vec3 b = vec3(0.6, 0.2, 0.7);
-    vec3 c = vec3(0.9, 0.7, 0.8);
-    vec3 d = vec3(0.4, 0.5, 0.3);
-    return a + b*cos(6.28318*(c*t+d));
+    vec3 a = vec3(0.5, 0.3, 0.6); // darker base purple tone
+    vec3 b = vec3(0.6, 0.2, 0.7); // less green amplitude, higher contrast
+    vec3 c = vec3(0.9, 0.7, 0.8); // smooth frequency transitions
+    vec3 d = vec3(0.4, 0.5, 0.3); // adjusted phases for balance
+    return a + b * cos(6.28318 * (c * t + d));
 }
 
 float mand(vec2 c) {
     vec2 z = vec2(0.0);
     float iter = 0.0;
-    for(int i=0; i<int(u_iter); i++){
+    const float maxIter = 1200.0;
+    for(int i=0;i<1200;i++){
         if(dot(z,z)>4.0) break;
         z = vec2(z.x*z.x - z.y*z.y, 2.0*z.x*z.y) + c;
         iter++;
     }
-    return iter / u_iter;
+    return iter / maxIter;
 }
 
 void main() {
@@ -44,36 +46,24 @@ void main() {
 
 <script>
 const gl = c.getContext('webgl');
-const compile = (t,s)=>{
-  const sh=gl.createShader(t);gl.shaderSource(sh,s);gl.compileShader(sh);
-  return sh;
-};
+const compile = (t,s)=>{const sh=gl.createShader(t);gl.shaderSource(sh,s);gl.compileShader(sh);return sh;};
 const prog = gl.createProgram();
 gl.attachShader(prog, compile(gl.VERTEX_SHADER, "attribute vec2 p;void main(){gl_Position=vec4(p,0,1);}"));
-gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, frag.textContent));
-gl.linkProgram(prog);gl.useProgram(prog);
+gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, frag.textContent));gl.linkProgram(prog);gl.useProgram(prog);
 
-const buf = gl.createBuffer();
-gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+const buf = gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER, buf);
 gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,1,1]), gl.STATIC_DRAW);
-const pos = gl.getAttribLocation(prog, 'p');
-gl.enableVertexAttribArray(pos);
-gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
+const pos = gl.getAttribLocation(prog, 'p');gl.enableVertexAttribArray(pos);gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
 
 const u_res = gl.getUniformLocation(prog, 'u_res');
 const u_time = gl.getUniformLocation(prog, 'u_time');
 const u_zoom = gl.getUniformLocation(prog, 'u_zoom');
 const u_center = gl.getUniformLocation(prog, 'u_center');
-const u_iter = gl.getUniformLocation(prog, 'u_iter');
 
 let zoom = 1.0;
 let center = {x: -0.743643887, y: 0.1318259};
 
-function resize() {
-  c.width = innerWidth;
-  c.height = innerHeight;
-  gl.viewport(0, 0, c.width, c.height);
-}
+function resize() { c.width = innerWidth; c.height = innerHeight; gl.viewport(0, 0, c.width, c.height); }
 resize(); addEventListener('resize', resize);
 
 let dragging = false, last = [0,0];
@@ -98,12 +88,10 @@ c.addEventListener('touchmove',e=>{
 let start=performance.now();
 (function loop(){
   const t=(performance.now()-start)/1000;
-  const iterCount = Math.min(3000, 300 + Math.floor(Math.log2(zoom)*-150));
   gl.uniform2f(u_res,c.width,c.height);
   gl.uniform1f(u_time,t);
   gl.uniform1f(u_zoom,zoom);
   gl.uniform2f(u_center,center.x,center.y);
-  gl.uniform1f(u_iter,iterCount);
   gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
   requestAnimationFrame(loop);
 })();
