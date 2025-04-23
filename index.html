@@ -19,7 +19,7 @@ uniform vec2 u_center;
 vec3 palette(float t) {
     vec3 a = vec3(0.4, 0.2, 0.5);  // Darker base tone (introduces deep shadows)
     vec3 b = vec3(0.5, 0.15, 0.7); // Moderate amplitude, minimal green (avoids muddy colors)
-    vec3 c = vec3(0.8, 0.35, 0.9);  // Gentle and soothing frequency transitions
+    vec3 c = vec3(0.4, 0.7, 0.9);  // Gentle and soothing frequency transitions
     vec3 d = vec3(0.2, 0.3, 0.35); // Phases shifted subtly for harmonious blend
     return a + b * cos(6.28318 * (c * t + d));
 }
